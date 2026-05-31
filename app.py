@@ -189,7 +189,7 @@ def detect_frame(image_path, threshold):
         return "error", 0
 
 def extract_frames(video_path, num_frames=10):
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.DataFrame = cv2.VideoCapture(video_path)
     tot = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     if fps <= 0: fps = 30 
@@ -274,7 +274,7 @@ with st.sidebar:
                                 help="Batas ambang keyakinan minimum deteksi kecerdasan buatan.")
     
     st.write("---")
-    st.markdown("### ### 📜 Informasi Sistem")
+    st.markdown("### 📜 Informasi Sistem")
     st.caption("**Model:** ResNet50 Architecture\n\n**Akurasi Dataset:** 99.9%\n\n**Framework:** Roboflow Inference HTTP")
 
 # ==========================================
@@ -354,19 +354,11 @@ with tab1:
                                     f.write(cookie_file.getvalue())
                             
                             # ==========================================
-                            # BAGIAN OPSI YT-DLP YANG SUDAH TOTAL FIX (SHORTS & COOKIES READY)
+                            # OPSI YT-DLP TOTAL FIX (MENGGUNAKAN 'best' AGAR SHORTS AMAN)
                             # ==========================================
                             ydl_opts = {
-                                'format': 'bestvideo+bestaudio/best',
+                                'format': 'best',
                                 'outtmpl': unique_yt_name,
-                                'extractor_args': {
-                                    'youtube': {
-                                        'player_client': ['android', 'web', 'mweb'],
-                                    }
-                                },
-                                'headers': {
-                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                                },
                                 'rm_cached_dir': True,
                                 'nocheckcertificate': True,
                                 'quiet': True,
@@ -602,7 +594,7 @@ with tab3:
     
     st.markdown("#### 🎯 Tujuan Pembuatan Sistem")
     st.write("""
-    Di era pesatnya perkembangan kecerdasan buatan, teknologi rekayasa video (*deepfake*) kini mampu memproduksi manipulasi visual yang sangat halus dan super realistis. Dampaknya, **masyarakat awam sering kali mengalami kesulitan besar untuk membedakan** secara kasat mata mana video yang benar-benar nyata (otentik) and mana konten palsu hasil fabrikasi kecerdasan buatan. 
+    Di era pesatnya perkembangan kecerdasan buatan, teknologi rekayasa video (*deepfake*) kini mampu memproduksi manipulasi visual yang sangat halus dan super realistis. Dampaknya, **masyarakat awam sering kali mengalami kesulitan besar untuk membedakan** secara kasat mata mana video yang benar-benar nyata (otentik) dan mana konten palsu hasil fabrikasi kecerdasan buatan. 
     
     Aletheia Vision dirancang dan hadir sebagai **alat uji praktis (testing tool)** yang ramah pengguna. Aplikasi ini bertujuan membantu menjembatani keterbatasan masyarakat awam, akademisi, hingga praktisi hukum agar dapat memverifikasi keabsahan dokumen video secara objektif, instan, serta transparan berdasarkan parameter data ilmiah, bukan sekadar asumsi visual.
     """)
