@@ -156,7 +156,7 @@ st.markdown("""
 # ==========================================
 # 2. PROSES AMAN UNTUK API KEY & DATABASE
 # ==========================================
-API_KEY = st.secrets["API_KEY"] 
+API_KEY = ""
 try:
     if hasattr(st, "secrets") and "API_KEY" in st.secrets:
         API_KEY = st.secrets["API_KEY"]
@@ -334,6 +334,12 @@ with tab1:
         
         if mode == "YouTube":
             yt_url = st.text_input("URL YouTube:", placeholder="https://www.youtube.com/...")
+            
+            # --- TAMBAHAN FITUR BYPASS ULTIMATE: Opsi Upload Cookies via UI ---
+            with st.expander("🍪 Solusi Cadangan jika YouTube Terblokir Keras (Error 403)"):
+                st.caption("Jika server Streamlit terkena pembatasan IP, unggah file cookies.txt hasil ekspor ekstensi browser (dalam kondisi login YT) di sini:")
+                cookie_file = st.file_uploader("Unggah berkas cookies.txt:", type=["txt"], key="yt_cookie_uploader_file")
+            
             c_btn1, c_btn2 = st.columns(2)
             
             if c_btn1.button("🏺 Download Video"):
@@ -346,28 +352,50 @@ with tab1:
                             
                             unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
                             
+                            # Tulis file kuki sementara jika ada berkas yang diunggah pengguna
+                            temp_cookie_path = None
+                            if cookie_file is not None:
+                                temp_cookie_path = "temp_cookies_app.txt"
+                                with open(temp_cookie_path, "wb") as f:
+                                    f.write(cookie_file.getvalue())
+                            
                             # ==========================================
-                            # BAGIAN OPSI YT-DLP YANG SUDAH DI-BYPASS 403
+                            # BAGIAN OPSI YT-DLP YANG SUDAH DI-BYPASS 403 (VERSI UPGRADE STABIL)
                             # ==========================================
                             ydl_opts = {
-                                'format': 'bestvideo[height<=1080][ext=mp4]/best[height<=1080][ext=mp4]/best',
+                                # Menggunakan format 'best' tunggal utuh untuk meminimalisir request ganda pemicu deteksi bot AWS
+                                'format': 'best',
                                 'outtmpl': unique_yt_name,
-                                # Trik memaksa yt-dlp menyamar sebagai klien Android & Web Embedded
+                                # Trik memaksa yt-dlp menyamar sebagai klien Pemutar Mobile Web & TV HTML5 (paling kebal pemblokiran)
                                 'extractor_args': {
                                     'youtube': {
-                                        'player_client': ['android', 'web_embedded']
+                                        'player_client': ['mweb', 'tvhtml5'],
+                                        'player_skip': ['webpage', 'configs']
                                     }
                                 },
-                                # Menambahkan Header Browser asli agar tidak diblokir Cloud AWS
+                                # Menambahkan Header Browser seluler asli agar tidak dicurigai oleh server proteksi YouTube
                                 'headers': {
-                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+                                    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
+                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                                    'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
                                 },
+                                'rm_cached_dir': True, # Membersihkan direktori cache token usang pemicu utama error 403
+                                'nocheckcertificate': True,
                                 'quiet': True,
                                 'no_warnings': True
                             }
                             
+                            # Masukkan kuki ke sistem parameter jika diunggah
+                            if temp_cookie_path and os.path.exists(temp_cookie_path):
+                                ydl_opts['cookiefile'] = temp_cookie_path
+                            
                             with YoutubeDL(ydl_opts) as ydl: 
                                 ydl.download([yt_url])
+                            
+                            # Hapus file kuki lokal sementara setelah unduhan berhasil
+                            if temp_cookie_path and os.path.exists(temp_cookie_path):
+                                try: os.remove(temp_cookie_path)
+                                except Exception: pass
                             
                             st.session_state.media_path = unique_yt_name
                             st.session_state.media_label = yt_url
@@ -375,7 +403,12 @@ with tab1:
                             st.success("Video Kualitas Tinggi Berhasil Dimuat!")
                             st.rerun()
                         except Exception as e:
+                            # Bersihkan sisa kuki jika proses mengalami interupsi/gagal
+                            if 'temp_cookie_path' in locals() and temp_cookie_path and os.path.exists(temp_cookie_path):
+                                try: os.remove(temp_cookie_path)
+                                except Exception: pass
                             st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
+                            st.info("💡 **Tips Penanganan:** Jika galat 403 berlanjut, silakan gunakan menu dropdown kuki di atas untuk menembus autentikasi IP cloud.")
                             
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
@@ -523,7 +556,7 @@ with tab2:
                         st.error("❌ Gagal menghapus! Tutup file `riwayat_deteksi.csv` yang sedang terbuka di Excel terlebih dahulu.")
                     except Exception:
                         st.error("❌ Terjadi kegagalan saat membersihkan database.")
-                
+                    
                 st.write("---")
                 for idx, row in df.iloc[::-1].iterrows():
                     status_str = str(row['Hasil'])
@@ -584,7 +617,7 @@ with tab3:
     
     st.markdown("#### 🎯 Tujuan Pembuatan Sistem")
     st.write("""
-    Di era pesatnya perkembangan kecerdasan buatan, teknologi rekayasa video (*deepfake*) kini mampu memproduksi manipulasi visual yang sangat halus dan super realistis. Dampaknya, **masyarakat awam sering kali mengalami kesulitan besar untuk membedakan** secara kasat mata mana video yang benar-benar nyata (otentik) dan mana konten palsu hasil fabrikasi kecerdasan buatan. 
+    Di era pesatnya perkembangan kecerdasan buatan, teknologi rekayasa video (*deepfake*) kini mampu memproduksi manipulasi visual yang sangat halus dan super realistis. Dampaknya, **masyarakat awam sering kali mengalami kesulitan besar untuk membedakan** secara kasat mata mana video yang benar-benar nyata (otentik) and mana konten palsu hasil fabrikasi kecerdasan buatan. 
     
     Aletheia Vision dirancang dan hadir sebagai **alat uji praktis (testing tool)** yang ramah pengguna. Aplikasi ini bertujuan membantu menjembatani keterbatasan masyarakat awam, akademisi, hingga praktisi hukum agar dapat memverifikasi keabsahan dokumen video secara objektif, instan, serta transparan berdasarkan parameter data ilmiah, bukan sekadar asumsi visual.
     """)
