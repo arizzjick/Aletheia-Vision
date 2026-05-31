@@ -274,7 +274,7 @@ with st.sidebar:
                                 help="Batas ambang keyakinan minimum deteksi kecerdasan buatan.")
     
     st.write("---")
-    st.markdown("### 📜 Informasi Sistem")
+    st.markdown("### ### 📜 Informasi Sistem")
     st.caption("**Model:** ResNet50 Architecture\n\n**Akurasi Dataset:** 99.9%\n\n**Framework:** Roboflow Inference HTTP")
 
 # ==========================================
@@ -346,9 +346,24 @@ with tab1:
                             
                             unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
                             
+                            # ==========================================
+                            # BAGIAN OPSI YT-DLP YANG SUDAH DI-BYPASS 403
+                            # ==========================================
                             ydl_opts = {
                                 'format': 'bestvideo[height<=1080][ext=mp4]/best[height<=1080][ext=mp4]/best',
-                                'outtmpl': unique_yt_name
+                                'outtmpl': unique_yt_name,
+                                # Trik memaksa yt-dlp menyamar sebagai klien Android & Web Embedded
+                                'extractor_args': {
+                                    'youtube': {
+                                        'player_client': ['android', 'web_embedded']
+                                    }
+                                },
+                                # Menambahkan Header Browser asli agar tidak diblokir Cloud AWS
+                                'headers': {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+                                },
+                                'quiet': True,
+                                'no_warnings': True
                             }
                             
                             with YoutubeDL(ydl_opts) as ydl: 
