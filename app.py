@@ -189,7 +189,6 @@ def detect_frame(image_path, threshold):
         return "error", 0
 
 def extract_frames(video_path, num_frames=10):
-    # KODE FIXED: Memperbaiki kesalahan deklarasi variabel cv2.VideoCapture
     cap = cv2.VideoCapture(video_path)
     tot = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -332,9 +331,16 @@ with tab1:
         if mode == "YouTube":
             yt_url = st.text_input("URL YouTube:", placeholder="https://www.youtube.com/...")
             
-            with st.expander("🍪 Solusi Cadangan jika YouTube Terblokir Keras (Error 403)"):
-                st.caption("Jika server Streamlit terkena pembatasan IP, unggah file cookies.txt hasil ekspor ekstensi browser (dalam kondisi login YT) di sini:")
-                cookie_file = st.file_uploader("Unggah berkas cookies.txt:", type=["txt"], key="yt_cookie_uploader_file")
+            # Area expander ini dipindahkan ke luar atau diperjelas karena cookies sekarang WAJIB jika kena Error 403
+            with st.expander("🔑 Solusi Utama Bypass HTTP Error 403 Forbidden (WAJIB JIKA ERROR)", expanded=True):
+                st.markdown("""
+                YouTube memblokir bot otomatis. Untuk mengatasinya:
+                1. Pasang ekstensi **'Get cookies.txt LOCALLY'** atau **'Cookie-Editor'** di Chrome/Edge/Firefox kamu.
+                2. Buka halaman utama YouTube (pastikan kamu dalam kondisi login akun Google/YouTube).
+                3. Klik ekstensi tersebut, lalu ekspor/unduh sebagai file **`cookies.txt`**.
+                4. Unggah file `cookies.txt` tersebut di bawah ini sebelum menekan tombol download.
+                """)
+                cookie_file = st.file_uploader("Unggah berkas cookies.txt kamu:", type=["txt"], key="yt_cookie_uploader_file")
             
             c_btn1, c_btn2 = st.columns(2)
             
@@ -355,7 +361,7 @@ with tab1:
                                     f.write(cookie_file.getvalue())
                             
                             # ==========================================
-                            # OPSI YT-DLP TOTAL FIX KHUSUS SHORTS & VIDEO TUNGGAL (TANPA FFMPEG REQUIREMENT)
+                            # OPSI YT-DLP DENGAN USER AGENT & COKIES FIX FOR 403 FORBIDDEN
                             # ==========================================
                             ydl_opts = {
                                 'format': 'mp4/best',
@@ -364,11 +370,22 @@ with tab1:
                                 'rm_cached_dir': True,
                                 'nocheckcertificate': True,
                                 'quiet': True,
-                                'no_warnings': True
+                                'no_warnings': True,
+                                # Menyamar sebagai browser Chrome asli agar tidak dicurigai bot
+                                'http_headers': {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                                    'Accept-Language': 'en-US,en;q=0.5',
+                                    'Sec-Fetch-Mode': 'navigate',
+                                }
                             }
                             
+                            # Jika user mengunggah cookies, gunakan cookies tersebut
                             if temp_cookie_path and os.path.exists(temp_cookie_path):
                                 ydl_opts['cookiefile'] = temp_cookie_path
+                            else:
+                                # Fallback mencoba mengambil session cookies dari browser lokal langsung jika ada
+                                ydl_opts['cookiesfrombrowser'] = ('chrome', 'edge', 'firefox', 'opera')
                             
                             with YoutubeDL(ydl_opts) as ydl: 
                                 ydl.download([yt_url])
@@ -387,7 +404,7 @@ with tab1:
                                 try: os.remove(temp_cookie_path)
                                 except Exception: pass
                             st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
-                            st.info("💡 **Tips Penanganan:** Pastikan cookies.txt yang diunggah masih baru dan diekspor saat membuka halaman utama YouTube.")
+                            st.info("💡 **Solusi Ampuh 403 Forbidden:** Pastikan kamu telah mengunduh file `cookies.txt` baru dari browser saat sedang membuka halaman YouTube (akun login), lalu pasang di menu unggah berkas di atas.")
                             
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
