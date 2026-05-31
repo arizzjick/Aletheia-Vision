@@ -280,17 +280,14 @@ with st.sidebar:
 # ==========================================
 # 4. KONTEN UTAMA HALAMAN (STRUKTUR LOGO & HEADER)
 # ==========================================
-# Mengonversi kedua gambar komponen desain menjadi base64
 logo_base64 = get_image_as_base64("LOGO ALETHEIA.png")
 icon_base64 = get_image_as_base64("ICON ALETHEIA.png")
 
-# Kunci ukuran LOGO ALETHEIA dengan max-width agar stabil saat di-zoom in/out
 if logo_base64:
     logo_html = f"<img src='{logo_base64}' style='max-width: 1000px; width: 100%; height: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;'>"
 else:
     logo_html = ""
 
-# Menyusun seluruh komponen visual header ke dalam satu struktur string HTML terisolasi
 if icon_base64:
     header_full_html = f"""
     <div class='logo-container'>
@@ -318,7 +315,6 @@ else:
     </div>
     """
 
-# Eksekusi rendering struktur visual dalam satu kali pemanggilan tunggal (mencegah bug layout pecah)
 st.markdown(header_full_html, unsafe_allow_html=True)
 
 # Modul Tab Utama Aplikasi
@@ -335,7 +331,6 @@ with tab1:
         if mode == "YouTube":
             yt_url = st.text_input("URL YouTube:", placeholder="https://www.youtube.com/...")
             
-            # --- TAMBAHAN FITUR BYPASS ULTIMATE: Opsi Upload Cookies via UI ---
             with st.expander("🍪 Solusi Cadangan jika YouTube Terblokir Keras (Error 403)"):
                 st.caption("Jika server Streamlit terkena pembatasan IP, unggah file cookies.txt hasil ekspor ekstensi browser (dalam kondisi login YT) di sini:")
                 cookie_file = st.file_uploader("Unggah berkas cookies.txt:", type=["txt"], key="yt_cookie_uploader_file")
@@ -352,7 +347,6 @@ with tab1:
                             
                             unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
                             
-                            # Tulis file kuki sementara jika ada berkas yang diunggah pengguna
                             temp_cookie_path = None
                             if cookie_file is not None:
                                 temp_cookie_path = "temp_cookies_app.txt"
@@ -360,39 +354,31 @@ with tab1:
                                     f.write(cookie_file.getvalue())
                             
                             # ==========================================
-                            # BAGIAN OPSI YT-DLP YANG SUDAH DI-BYPASS 403 (VERSI UPGRADE STABIL)
+                            # BAGIAN OPSI YT-DLP YANG SUDAH TOTAL FIX (SHORTS & COOKIES READY)
                             # ==========================================
                             ydl_opts = {
-                                # Menggunakan format 'best' tunggal utuh untuk meminimalisir request ganda pemicu deteksi bot AWS
-                                'format': 'best',
+                                'format': 'bestvideo+bestaudio/best',
                                 'outtmpl': unique_yt_name,
-                                # Trik memaksa yt-dlp menyamar sebagai klien Pemutar Mobile Web & TV HTML5 (paling kebal pemblokiran)
                                 'extractor_args': {
                                     'youtube': {
-                                        'player_client': ['mweb', 'tvhtml5'],
-                                        'player_skip': ['webpage', 'configs']
+                                        'player_client': ['android', 'web', 'mweb'],
                                     }
                                 },
-                                # Menambahkan Header Browser seluler asli agar tidak dicurigai oleh server proteksi YouTube
                                 'headers': {
-                                    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
-                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                                    'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                                 },
-                                'rm_cached_dir': True, # Membersihkan direktori cache token usang pemicu utama error 403
+                                'rm_cached_dir': True,
                                 'nocheckcertificate': True,
                                 'quiet': True,
                                 'no_warnings': True
                             }
                             
-                            # Masukkan kuki ke sistem parameter jika diunggah
                             if temp_cookie_path and os.path.exists(temp_cookie_path):
                                 ydl_opts['cookiefile'] = temp_cookie_path
                             
                             with YoutubeDL(ydl_opts) as ydl: 
                                 ydl.download([yt_url])
                             
-                            # Hapus file kuki lokal sementara setelah unduhan berhasil
                             if temp_cookie_path and os.path.exists(temp_cookie_path):
                                 try: os.remove(temp_cookie_path)
                                 except Exception: pass
@@ -403,12 +389,11 @@ with tab1:
                             st.success("Video Kualitas Tinggi Berhasil Dimuat!")
                             st.rerun()
                         except Exception as e:
-                            # Bersihkan sisa kuki jika proses mengalami interupsi/gagal
                             if 'temp_cookie_path' in locals() and temp_cookie_path and os.path.exists(temp_cookie_path):
                                 try: os.remove(temp_cookie_path)
                                 except Exception: pass
                             st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
-                            st.info("💡 **Tips Penanganan:** Jika galat 403 berlanjut, silakan gunakan menu dropdown kuki di atas untuk menembus autentikasi IP cloud.")
+                            st.info("💡 **Tips Penanganan:** Pastikan cookies.txt yang diunggah masih baru dan diekspor saat membuka halaman utama YouTube.")
                             
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
