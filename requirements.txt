@@ -1,0 +1,7 @@
+streamlit
+opencv-python-headless
+inference-sdk
+yt-dlp
+pandas
+pillow
+numpy
