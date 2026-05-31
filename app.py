@@ -189,7 +189,8 @@ def detect_frame(image_path, threshold):
         return "error", 0
 
 def extract_frames(video_path, num_frames=10):
-    cap = cv2.DataFrame = cv2.VideoCapture(video_path)
+    # KODE FIXED: Memperbaiki kesalahan deklarasi variabel cv2.VideoCapture
+    cap = cv2.VideoCapture(video_path)
     tot = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     if fps <= 0: fps = 30 
@@ -354,11 +355,12 @@ with tab1:
                                     f.write(cookie_file.getvalue())
                             
                             # ==========================================
-                            # OPSI YT-DLP TOTAL FIX (MENGGUNAKAN 'best' AGAR SHORTS AMAN)
+                            # OPSI YT-DLP TOTAL FIX KHUSUS SHORTS & VIDEO TUNGGAL (TANPA FFMPEG REQUIREMENT)
                             # ==========================================
                             ydl_opts = {
-                                'format': 'best',
+                                'format': 'mp4/best',
                                 'outtmpl': unique_yt_name,
+                                'noplaylist': True,
                                 'rm_cached_dir': True,
                                 'nocheckcertificate': True,
                                 'quiet': True,
