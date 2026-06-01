@@ -351,7 +351,6 @@ with tab1:
                                 try: os.remove(st.session_state.media_path)
                                 except Exception: pass 
                             
-                            # MODIFIKASI: Menggunakan template ekstensi dinamis .%(ext)s agar fleksibel
                             unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.%(ext)s"
                             
                             temp_cookie_path = None
@@ -360,15 +359,18 @@ with tab1:
                                 with open(temp_cookie_path, "wb") as f:
                                     f.write(cookie_file.getvalue())
                             
-                            # MODIFIKASI: Format diubah menjadi dinamis dan adaptif agar tidak memicu 'format is not available'
+                            # =========================================================================
+                            # PERBAIKAN DISINI: Melonggarkan format & mematikan OS Keyring Backend
+                            # =========================================================================
                             ydl_opts = {
-                                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                                'format': 'bestvideo+bestaudio/best', # Solusi jitu Error "Format is not available"
                                 'outtmpl': unique_yt_name,
                                 'noplaylist': True,
                                 'rm_cached_dir': True,
                                 'nocheckcertificate': True,
                                 'quiet': True,
                                 'no_warnings': True,
+                                'keyring_backend': 'dummy', # Solusi jitu Error "unsupported keyring"
                                 'http_headers': {
                                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -382,7 +384,6 @@ with tab1:
                             else:
                                 ydl_opts['cookiesfrombrowser'] = ('chrome', 'edge', 'firefox', 'opera')
                             
-                            # MODIFIKASI: Mengekstrak info sekaligus mengunduh, lalu mengambil nama path fisik file secara akurat
                             with YoutubeDL(ydl_opts) as ydl: 
                                 info_dict = ydl.extract_info(yt_url, download=True)
                                 downloaded_filename = ydl.prepare_filename(info_dict)
