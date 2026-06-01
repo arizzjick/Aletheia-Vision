@@ -331,12 +331,12 @@ with tab1:
         if mode == "YouTube":
             yt_url = st.text_input("URL YouTube:", placeholder="https://www.youtube.com/...")
             
-            with st.expander("🔑 Solusi Utama Bypass HTTP Error 403 Forbidden (WAJIB JIKA ERROR)", expanded=True):
+            with st.expander("🔑 Solusi Utama Bypass HTTP Error 403 Forbidden (Gunakan jika bypass otomatis gagal)", expanded=False):
                 st.markdown("""
-                YouTube memblokir bot otomatis. Untuk mengatasinya:
-                1. Pasang ekstensi **'Get cookies.txt LOCALLY'** atau **'Cookie-Editor'** di Chrome/Edge/Firefox kamu.
-                2. Buka halaman utama YouTube (pastikan kamu dalam kondisi login akun Google/YouTube).
-                3. Klik ekstensi tersebut, lalu ekspor/unduh sebagai file **`cookies.txt`**.
+                Jika YouTube melakukan blokir total terhadap server/IP Anda, ikuti langkah ini:
+                1. Pasang ekstensi **'Get cookies.txt LOCALLY'** atau **'Cookie-Editor'** di browser Anda.
+                2. Buka halaman utama YouTube (pastikan Anda sudah login ke akun Google Anda).
+                3. Klik ikon ekstensi tersebut, lalu ekspor/unduh sebagai file **`cookies.txt`**.
                 4. Unggah file `cookies.txt` tersebut di bawah ini sebelum menekan tombol download.
                 """)
                 cookie_file = st.file_uploader("Unggah berkas cookies.txt kamu:", type=["txt"], key="yt_cookie_uploader_file")
@@ -345,7 +345,7 @@ with tab1:
             
             if c_btn1.button("🏺 Download Video"):
                 if yt_url:
-                    with st.spinner("⚡ Mengunduh Video dari YouTube..."):
+                    with st.spinner("⚡ Mengunduh Video dari YouTube (Mencoba Bypass Protokol)..."):
                         try:
                             if st.session_state.media_path and os.path.exists(st.session_state.media_path) and "yt_" in st.session_state.media_path:
                                 try: os.remove(st.session_state.media_path)
@@ -360,11 +360,10 @@ with tab1:
                                     f.write(cookie_file.getvalue())
                             
                             # =========================================================================
-                            # PERBAIKAN UTAMA: Menggunakan 'best' agar tidak butuh FFMPEG untuk merging
-                            # Menghapus 'cookiesfrombrowser' agar bebas dari error keyring OS
+                            # TRICK BARU: Memaksa yt-dlp menyamar menjadi Aplikasi Android Resmi YouTube
                             # =========================================================================
                             ydl_opts = {
-                                'format': 'best', # Mengunduh single-file terbaik (Video+Audio menyatu, No FFMPEG required)
+                                'format': 'best', 
                                 'outtmpl': unique_yt_name,
                                 'noplaylist': True,
                                 'rm_cached_dir': True,
@@ -372,10 +371,12 @@ with tab1:
                                 'quiet': True,
                                 'no_warnings': True,
                                 'keyring_backend': 'dummy', 
+                                # Mengelabui YouTube dengan seolah-olah bertindak sebagai player Android/Web Client bawaan OS
+                                'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
                                 'http_headers': {
-                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                                    'Accept-Language': 'en-US,en;q=0.5',
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                                    'Accept-Language': 'en-US,en;q=0.9',
                                     'Sec-Fetch-Mode': 'navigate',
                                 }
                             }
@@ -401,7 +402,7 @@ with tab1:
                                 try: os.remove(temp_cookie_path)
                                 except Exception: pass
                             st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
-                            st.info("💡 **Tips:** Pastikan Anda mengunggah file `cookies.txt` terbaru langsung dari ekstensi browser saat Anda sedang membuka halaman YouTube (dalam kondisi akun login).")
+                            st.info("💡 **Catatan:** Jika penyamaran sistem gagal akibat limitasi IP Address server, silakan gunakan fitur unggah file `cookies.txt` di menu expander di atas.")
                             
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
