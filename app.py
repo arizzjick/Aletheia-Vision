@@ -331,7 +331,6 @@ with tab1:
         if mode == "YouTube":
             yt_url = st.text_input("URL YouTube:", placeholder="https://www.youtube.com/...")
             
-            # Area expander ini dipindahkan ke luar atau diperjelas karena cookies sekarang WAJIB jika kena Error 403
             with st.expander("🔑 Solusi Utama Bypass HTTP Error 403 Forbidden (WAJIB JIKA ERROR)", expanded=True):
                 st.markdown("""
                 YouTube memblokir bot otomatis. Untuk mengatasinya:
@@ -360,9 +359,6 @@ with tab1:
                                 with open(temp_cookie_path, "wb") as f:
                                     f.write(cookie_file.getvalue())
                             
-                            # ==========================================
-                            # OPSI YT-DLP DENGAN USER AGENT & COKIES FIX FOR 403 FORBIDDEN
-                            # ==========================================
                             ydl_opts = {
                                 'format': 'mp4/best',
                                 'outtmpl': unique_yt_name,
@@ -371,7 +367,6 @@ with tab1:
                                 'nocheckcertificate': True,
                                 'quiet': True,
                                 'no_warnings': True,
-                                # Menyamar sebagai browser Chrome asli agar tidak dicurigai bot
                                 'http_headers': {
                                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -380,11 +375,9 @@ with tab1:
                                 }
                             }
                             
-                            # Jika user mengunggah cookies, gunakan cookies tersebut
                             if temp_cookie_path and os.path.exists(temp_cookie_path):
                                 ydl_opts['cookiefile'] = temp_cookie_path
                             else:
-                                # Fallback mencoba mengambil session cookies dari browser lokal langsung jika ada
                                 ydl_opts['cookiesfrombrowser'] = ('chrome', 'edge', 'firefox', 'opera')
                             
                             with YoutubeDL(ydl_opts) as ydl: 
@@ -408,10 +401,20 @@ with tab1:
                             
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
-            uploaded = st.file_uploader("Upload File (.mp4)", type=["mp4"], label_visibility="collapsed")
+            # =========================================================================
+            # PERUBAHAN DISINI: MENDUKUNG BANYAK FORMAT VIDEO & FILE EXTENSION DINAMIS
+            # =========================================================================
+            uploaded = st.file_uploader(
+                "Upload File Video", 
+                type=["mp4", "avi", "mov", "mkv", "wmv", "webm", "flv", "mpeg", "3gp"], 
+                label_visibility="collapsed"
+            )
             if uploaded:
-                tmp = tempfile.mktemp(suffix=".mp4")
-                with open(tmp, "wb") as f: f.write(uploaded.read())
+                # Ambil ekstensi asli dari berkas yang diunggah secara dinamis
+                file_extension = os.path.splitext(uploaded.name)[1]
+                tmp = tempfile.mktemp(suffix=file_extension)
+                with open(tmp, "wb") as f: 
+                    f.write(uploaded.read())
                 st.session_state.media_path = tmp
                 st.session_state.media_label = uploaded.name
                 st.session_state.source_type = "Video Lokal"
