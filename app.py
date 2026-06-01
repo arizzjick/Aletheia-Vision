@@ -331,81 +331,82 @@ with tab1:
         if mode == "YouTube":
             yt_url = st.text_input("URL YouTube:", placeholder="https://www.youtube.com/...")
             
-            with st.expander("🔑 PENGATURAN BYPASS PROTEKSI CIPHER YOUTUBE", expanded=False):
+            with st.expander("🔑 AUTENTIKASI COOKIES YOUTUBE (WAJIB)", expanded=True):
                 st.markdown("""
-                Gunakan pengaturan cookie ini jika sewaktu-waktu diblokir kembali oleh YouTube.
+                YouTube mendeteksi sistem sebagai bot. Silakan unggah berkas cookie Anda:
+                1. Dapatkan file teks cookie lewat ekstensi browser (contoh: *Get cookies.txt LOCALLY*).
+                2. Unggah file teks tersebut pada kolom di bawah ini sebelum mengunduh.
                 """)
-                cookie_file = st.file_uploader("Unggah berkas cookies.txt (Opsional):", type=["txt"], key="yt_cookie_final_fixed")
+                cookie_file = st.file_uploader("Unggah berkas cookies.txt Anda:", type=["txt"], key="yt_cookie_no_ffmpeg_fix")
             
             c_btn1, c_btn2 = st.columns(2)
             
             if c_btn1.button("🏺 Download Video"):
                 if yt_url:
-                    with st.spinner("⚡ Mengunduh Video Menggunakan Alokasi Format Otomatis..."):
-                        try:
-                            if st.session_state.media_path and os.path.exists(st.session_state.media_path) and "yt_" in st.session_state.media_path:
-                                try: os.remove(st.session_state.media_path)
-                                except Exception: pass 
-                            
-                            unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.%(ext)s"
-                            
-                            temp_cookie_path = None
-                            if cookie_file is not None:
+                    if cookie_file is None:
+                        st.error("❌ **Gagal:** Anda wajib mengunggah berkas `cookies.txt` terlebih dahulu untuk menghindari pemblokiran bot oleh YouTube.")
+                    else:
+                        with st.spinner("⚡ Mengunduh Video Menggunakan Single-File Format (No FFmpeg Mode)..."):
+                            try:
+                                if st.session_state.media_path and os.path.exists(st.session_state.media_path) and "yt_" in st.session_state.media_path:
+                                    try: os.remove(st.session_state.media_path)
+                                    except Exception: pass 
+                                
+                                unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.%(ext)s"
+                                
                                 temp_cookie_path = f"final_cookies_{datetime.now().strftime('%H%M%S')}.txt"
                                 with open(temp_cookie_path, "wb") as f:
                                     f.write(cookie_file.getvalue())
-                            
-                            # =========================================================================
-                            # PERUBAHAN KRUSIAL: Memperluas toleransi opsi format video/audio yt-dlp
-                            # Agar tidak memicu error 'Requested format is not available'
-                            # =========================================================================
-                            ydl_opts = {
-                                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', 
-                                'outtmpl': unique_yt_name,
-                                'noplaylist': True,
-                                'rm_cached_dir': True,
-                                'nocheckcertificate': True,
-                                'quiet': True,
-                                'no_warnings': True,
-                                'keyring_backend': 'dummy',
-                                'extractor_args': {'youtube': {'player_client': ['ios', 'web']}},
-                                'http_headers': {
-                                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-                                    'Accept': '*/*',
-                                    'Accept-Language': 'en-US,en;q=0.9',
+                                
+                                # =========================================================================
+                                # PERUBAHAN UTAMA: Memaksa yt-dlp mengunduh file video utuh gabungan (bukan terpisah)
+                                # Ini menghilangkan dependensi / ketergantungan pada FFmpeg secara mutlak.
+                                # =========================================================================
+                                ydl_opts = {
+                                    'format': 'b[ext=mp4]/ext=mp4/b', # Mengambil single-file video+audio langsung berformat MP4
+                                    'outtmpl': unique_yt_name,
+                                    'noplaylist': True,
+                                    'rm_cached_dir': True,
+                                    'nocheckcertificate': True,
+                                    'quiet': True,
+                                    'no_warnings': True,
+                                    'keyring_backend': 'dummy',
+                                    'cookiefile': temp_cookie_path,
+                                    'extractor_args': {'youtube': {'player_client': ['ios', 'web']}},
+                                    'http_headers': {
+                                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+                                        'Accept': '*/*',
+                                        'Accept-Language': 'en-US,en;q=0.9',
+                                    }
                                 }
-                            }
-                            
-                            if temp_cookie_path and os.path.exists(temp_cookie_path):
-                                ydl_opts['cookiefile'] = temp_cookie_path
-                            
-                            with YoutubeDL(ydl_opts) as ydl: 
-                                info_dict = ydl.extract_info(yt_url, download=True)
-                                downloaded_filename = ydl.prepare_filename(info_dict)
-                            
-                            if temp_cookie_path and os.path.exists(temp_cookie_path):
-                                try: os.remove(temp_cookie_path)
-                                except Exception: pass
-                            
-                            # Menangani variasi ekstensi keluaran file hasil download (mkv/mp4)
-                            actual_filename = downloaded_filename
-                            base_no_ext = os.path.splitext(downloaded_filename)[0]
-                            for ext in ['.mp4', '.mkv', '.webm', '.3gp']:
-                                if os.path.exists(base_no_ext + ext):
-                                    actual_filename = base_no_ext + ext
-                                    break
-                            
-                            st.session_state.media_path = actual_filename
-                            st.session_state.media_label = yt_url
-                            st.session_state.source_type = "Video YouTube"
-                            st.success("Video Berhasil Dimuat!")
-                            st.rerun()
-                            
-                        except Exception as e:
-                            if 'temp_cookie_path' in locals() and temp_cookie_path and os.path.exists(temp_cookie_path):
-                                try: os.remove(temp_cookie_path)
-                                except Exception: pass
-                            st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
+                                
+                                with YoutubeDL(ydl_opts) as ydl: 
+                                    info_dict = ydl.extract_info(yt_url, download=True)
+                                    downloaded_filename = ydl.prepare_filename(info_dict)
+                                
+                                if os.path.exists(temp_cookie_path):
+                                    try: os.remove(temp_cookie_path)
+                                    except Exception: pass
+                                
+                                # Menangani konversi ekstensi fisik file jika diperlukan
+                                actual_filename = downloaded_filename
+                                base_no_ext = os.path.splitext(downloaded_filename)[0]
+                                for ext in ['.mp4', '.mkv', '.webm', '.3gp']:
+                                    if os.path.exists(base_no_ext + ext):
+                                        actual_filename = base_no_ext + ext
+                                        break
+                                
+                                st.session_state.media_path = actual_filename
+                                st.session_state.media_label = yt_url
+                                st.session_state.source_type = "Video YouTube"
+                                st.success("Video Berhasil Dimuat!")
+                                st.rerun()
+                                
+                            except Exception as e:
+                                if 'temp_cookie_path' in locals() and os.path.exists(temp_cookie_path):
+                                    try: os.remove(temp_cookie_path)
+                                    except Exception: pass
+                                st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
                                 
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
