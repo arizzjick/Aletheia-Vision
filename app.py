@@ -351,7 +351,8 @@ with tab1:
                                 try: os.remove(st.session_state.media_path)
                                 except Exception: pass 
                             
-                            unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+                            # MODIFIKASI: Menggunakan template ekstensi dinamis .%(ext)s agar fleksibel
+                            unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.%(ext)s"
                             
                             temp_cookie_path = None
                             if cookie_file is not None:
@@ -359,8 +360,9 @@ with tab1:
                                 with open(temp_cookie_path, "wb") as f:
                                     f.write(cookie_file.getvalue())
                             
+                            # MODIFIKASI: Format diubah menjadi dinamis dan adaptif agar tidak memicu 'format is not available'
                             ydl_opts = {
-                                'format': 'mp4/best',
+                                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                                 'outtmpl': unique_yt_name,
                                 'noplaylist': True,
                                 'rm_cached_dir': True,
@@ -380,14 +382,16 @@ with tab1:
                             else:
                                 ydl_opts['cookiesfrombrowser'] = ('chrome', 'edge', 'firefox', 'opera')
                             
+                            # MODIFIKASI: Mengekstrak info sekaligus mengunduh, lalu mengambil nama path fisik file secara akurat
                             with YoutubeDL(ydl_opts) as ydl: 
-                                ydl.download([yt_url])
+                                info_dict = ydl.extract_info(yt_url, download=True)
+                                downloaded_filename = ydl.prepare_filename(info_dict)
                             
                             if temp_cookie_path and os.path.exists(temp_cookie_path):
                                 try: os.remove(temp_cookie_path)
                                 except Exception: pass
                             
-                            st.session_state.media_path = unique_yt_name
+                            st.session_state.media_path = downloaded_filename
                             st.session_state.media_label = yt_url
                             st.session_state.source_type = "Video YouTube"
                             st.success("Video Kualitas Tinggi Berhasil Dimuat!")
@@ -401,16 +405,12 @@ with tab1:
                             
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
-            # =========================================================================
-            # PERUBAHAN DISINI: MENDUKUNG BANYAK FORMAT VIDEO & FILE EXTENSION DINAMIS
-            # =========================================================================
             uploaded = st.file_uploader(
                 "Upload File Video", 
                 type=["mp4", "avi", "mov", "mkv", "wmv", "webm", "flv", "mpeg", "3gp"], 
                 label_visibility="collapsed"
             )
             if uploaded:
-                # Ambil ekstensi asli dari berkas yang diunggah secara dinamis
                 file_extension = os.path.splitext(uploaded.name)[1]
                 tmp = tempfile.mktemp(suffix=file_extension)
                 with open(tmp, "wb") as f: 
@@ -460,7 +460,7 @@ with tab1:
                         elif conf > 0.65:
                             alasan = "Distribusi noise spasial antara objek wajah dan latar belakang sinkron. Tidak ditemukan batas blending abnormal (efek blur buatan) di sekitar area rahang atau rambut."
                         else:
-                            alasan = "Struktur topografi wajah dan sinkronisasi bayangan alami tetap terjaga meskipun kualitas tangkapan frame mengalami sedikit penurunan resolusi atau kompresi digital."
+                            alasan = "Struktur topografi wajah & sinkronisasi bayangan alami tetap terjaga meskipun kualitas tangkapan frame mengalami sedikit penurunan resolusi atau kompresi digital."
                             
                         status_label = f"🟢 Asli ({conf:.1%})"
                         detail_logs.append(f"Frame #{f_idx} (Detik {sec:.2f}s) → Indikasi Asli: {conf:.1%} | Alasan: {alasan}")
@@ -610,7 +610,7 @@ with tab3:
     **Aletheia Vision** adalah sistem arsitektur aplikasi deteksi manipulasi video berbasis *Computer Vision* tingkat lanjut. Aplikasi ini dibangun memanfaatkan keunggulan *Framework* Streamlit dan didukung oleh model klasifikasi gambar arsitektur ResNet50 melalui integrasi Roboflow API untuk memfasilitasi kebutuhan investigasi bukti digital forensik.
     """)
     
-    st.warning("⚠️ **Status Aplikasi:** Saat ini sistem masih berada dalam tahapan **pengembangan aktif (Active Development Phase)**. Pembaruan model, optimalisasi kecepatan ekstraksi frame, dan penajaman sensitivitas deteksi akan terus dilakukan untuk menghasilkan performa forensik yang jauh lebih matang.")
+    st.warning("⚠️ **Status Aplikasi:** Saat ini sistem masih berada dalam tahapan **pengembangan aktif (Active Development Phase)**. Pembaruan model, optimalisasi kecepatan kecepatan ekstraksi frame, dan penajaman sensitivitas deteksi akan terus dilakukan untuk menghasilkan performa forensik yang jauh lebih matang.")
     
     st.write("---")
     
