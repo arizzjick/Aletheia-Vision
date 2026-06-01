@@ -345,7 +345,7 @@ with tab1:
             
             if c_btn1.button("🏺 Download Video"):
                 if yt_url:
-                    with st.spinner("⚡ Mengunduh Video Kualitas Tinggi dari YouTube..."):
+                    with st.spinner("⚡ Mengunduh Video dari YouTube..."):
                         try:
                             if st.session_state.media_path and os.path.exists(st.session_state.media_path) and "yt_" in st.session_state.media_path:
                                 try: os.remove(st.session_state.media_path)
@@ -360,17 +360,18 @@ with tab1:
                                     f.write(cookie_file.getvalue())
                             
                             # =========================================================================
-                            # PERBAIKAN DISINI: Melonggarkan format & mematikan OS Keyring Backend
+                            # PERBAIKAN UTAMA: Menggunakan 'best' agar tidak butuh FFMPEG untuk merging
+                            # Menghapus 'cookiesfrombrowser' agar bebas dari error keyring OS
                             # =========================================================================
                             ydl_opts = {
-                                'format': 'bestvideo+bestaudio/best', # Solusi jitu Error "Format is not available"
+                                'format': 'best', # Mengunduh single-file terbaik (Video+Audio menyatu, No FFMPEG required)
                                 'outtmpl': unique_yt_name,
                                 'noplaylist': True,
                                 'rm_cached_dir': True,
                                 'nocheckcertificate': True,
                                 'quiet': True,
                                 'no_warnings': True,
-                                'keyring_backend': 'dummy', # Solusi jitu Error "unsupported keyring"
+                                'keyring_backend': 'dummy', 
                                 'http_headers': {
                                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -381,8 +382,6 @@ with tab1:
                             
                             if temp_cookie_path and os.path.exists(temp_cookie_path):
                                 ydl_opts['cookiefile'] = temp_cookie_path
-                            else:
-                                ydl_opts['cookiesfrombrowser'] = ('chrome', 'edge', 'firefox', 'opera')
                             
                             with YoutubeDL(ydl_opts) as ydl: 
                                 info_dict = ydl.extract_info(yt_url, download=True)
@@ -395,14 +394,14 @@ with tab1:
                             st.session_state.media_path = downloaded_filename
                             st.session_state.media_label = yt_url
                             st.session_state.source_type = "Video YouTube"
-                            st.success("Video Kualitas Tinggi Berhasil Dimuat!")
+                            st.success("Video Berhasil Dimuat!")
                             st.rerun()
                         except Exception as e:
                             if 'temp_cookie_path' in locals() and temp_cookie_path and os.path.exists(temp_cookie_path):
                                 try: os.remove(temp_cookie_path)
                                 except Exception: pass
                             st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
-                            st.info("💡 **Solusi Ampuh 403 Forbidden:** Pastikan kamu telah mengunduh file `cookies.txt` baru dari browser saat sedang membuka halaman YouTube (akun login), lalu pasang di menu unggah berkas di atas.")
+                            st.info("💡 **Tips:** Pastikan Anda mengunggah file `cookies.txt` terbaru langsung dari ekstensi browser saat Anda sedang membuka halaman YouTube (dalam kondisi akun login).")
                             
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
