@@ -239,7 +239,7 @@ def get_stats():
 # 3. SIDEBAR (DASHBOARD STATISTIK)
 # ==========================================
 with st.sidebar:
-    st.markdown("### ### 🏛 *Dashboard* Statistik")
+    st.markdown("### 🏛 *Dashboard* Statistik")
     st.write("---")
     
     st.markdown("⚖️ **Total Pengujian Video**")
@@ -331,75 +331,80 @@ with tab1:
         if mode == "YouTube":
             yt_url = st.text_input("URL YouTube:", placeholder="https://www.youtube.com/...")
             
-            # Pengguna dipaksa tahu cara pasang cookies terisolasi agar 403 Forbidden hilang total
-            with st.expander("🔑 WAJIB UNGGAH COOKIES (Untuk Mengatasi HTTP Error 403)", expanded=True):
+            with st.expander("🔑 PENGATURAN BYPASS PROTEKSI CIPHER YOUTUBE", expanded=True):
                 st.markdown("""
-                Jaringan internet/Server Anda diblokir oleh YouTube. Silakan ikuti metode aman ini:
-                1. Pasang ekstensi browser bernama **'Get cookies.txt LOCALLY'** di laptop kamu.
-                2. Buka tab baru, buka halaman **YouTube.com** (Pastikan kamu sudah login ke akun Google kamu).
-                3. Klik ikon ekstensi tersebut, lalu simpan file teksnya (**`youtube.com_cookies.txt`**).
-                4. Masukkan file tersebut pada kolom unggahan di bawah ini sebelum menekan tombol unduh.
+                Jika *Error 403 Forbidden* terus muncul meski sudah pakai cookie biasa, silakan coba opsi ini:
+                1. Buka YouTube di browser Anda dan **putar video** yang ingin diunduh selama beberapa detik.
+                2. Ekspor file `cookies.txt` menggunakan ekstensi browser saat video tersebut sedang berjalan.
+                3. Unggah file tersebut di bawah ini, lalu klik **Download Video**.
                 """)
-                cookie_file = st.file_uploader("Unggah berkas youtube.com_cookies.txt kamu:", type=["txt"], key="yt_cookie_isolated_file")
+                cookie_file = st.file_uploader("Unggah berkas cookies.txt (Opsional/Disarankan):", type=["txt"], key="yt_cookie_final_remedial")
             
             c_btn1, c_btn2 = st.columns(2)
             
             if c_btn1.button("🏺 Download Video"):
                 if yt_url:
-                    if cookie_file is None:
-                        st.error("❌ **Gagal:** Server mendeteksi robot (Error 403). Kamu wajib mengunggah file `cookies.txt` pada menu di atas agar proses unduh berhasil.")
-                    else:
-                        with st.spinner("⚡ Mengunduh Video Menggunakan Akses Cookie Terisolasi..."):
-                            try:
-                                if st.session_state.media_path and os.path.exists(st.session_state.media_path) and "yt_" in st.session_state.media_path:
-                                    try: os.remove(st.session_state.media_path)
-                                    except Exception: pass 
-                                
-                                unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.%(ext)s"
-                                
-                                # Simpan file cookie dari Streamlit ke penyimpanan lokal aplikasi sementara
-                                temp_cookie_path = f"isolated_cookies_{datetime.now().strftime('%H%M%S')}.txt"
+                    with st.spinner("⚡ Mengunduh Video Menggunakan Enkripsi Safari iOS (Bypass Mode)..."):
+                        try:
+                            if st.session_state.media_path and os.path.exists(st.session_state.media_path) and "yt_" in st.session_state.media_path:
+                                try: os.remove(st.session_state.media_path)
+                                except Exception: pass 
+                            
+                            unique_yt_name = f"yt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.%(ext)s"
+                            
+                            temp_cookie_path = None
+                            if cookie_file is not None:
+                                temp_cookie_path = f"final_cookies_{datetime.now().strftime('%H%M%S')}.txt"
                                 with open(temp_cookie_path, "wb") as f:
                                     f.write(cookie_file.getvalue())
-                                
-                                # Konfigurasi yt-dlp aman tanpa menyentuh Keyring OS & tanpa butuh FFmpeg
-                                ydl_opts = {
-                                    'format': 'best', 
-                                    'outtmpl': unique_yt_name,
-                                    'noplaylist': True,
-                                    'rm_cached_dir': True,
-                                    'nocheckcertificate': True,
-                                    'quiet': True,
-                                    'no_warnings': True,
-                                    'keyring_backend': 'dummy', # Mematikan deteksi otomatis ke sistem keamanan OS
-                                    'cookiefile': temp_cookie_path, # Membaca file cookie buatan secara manual
-                                    'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
-                                    'http_headers': {
-                                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                                    }
+                            
+                            # =========================================================================
+                            # PERUBAHAN UTAMA: Mengalihkan agen penyamaran ke Client iOS & Safari
+                            # Ini adalah client paling tangguh menembus proteksi tanda tangan cipher 2026.
+                            # =========================================================================
+                            ydl_opts = {
+                                'format': 'best', 
+                                'outtmpl': unique_yt_name,
+                                'noplaylist': True,
+                                'rm_cached_dir': True,
+                                'nocheckcertificate': True,
+                                'quiet': True,
+                                'no_warnings': True,
+                                'keyring_backend': 'dummy',
+                                # Menyamar sebagai Apple iOS Client (iPhone) & Web Client Safari resmi
+                                'extractor_args': {'youtube': {'player_client': ['ios', 'web']}},
+                                'http_headers': {
+                                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+                                    'Accept': '*/*',
+                                    'Accept-Language': 'en-US,en;q=0.9',
+                                    'Cache-Control': 'no-cache',
+                                    'Pragma': 'no-cache',
                                 }
-                                
-                                with YoutubeDL(ydl_opts) as ydl: 
-                                    info_dict = ydl.extract_info(yt_url, download=True)
-                                    downloaded_filename = ydl.prepare_filename(info_dict)
-                                
-                                # Hapus file cookie setelah digunakan demi privasi keamanan akun
-                                if os.path.exists(temp_cookie_path):
-                                    try: os.remove(temp_cookie_path)
-                                    except Exception: pass
-                                
-                                st.session_state.media_path = downloaded_filename
-                                st.session_state.media_label = yt_url
-                                st.session_state.source_type = "Video YouTube"
-                                st.success("Video Berhasil Dimuat!")
-                                st.rerun()
-                                
-                            except Exception as e:
-                                if 'temp_cookie_path' in locals() and os.path.exists(temp_cookie_path):
-                                    try: os.remove(temp_cookie_path)
-                                    except Exception: pass
-                                st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
-                                st.info("💡 **Tips:** Jika masih gagal, pastikan file cookie Anda diunduh langsung saat tab browser Anda sedang aktif membuka website YouTube.")
+                            }
+                            
+                            if temp_cookie_path and os.path.exists(temp_cookie_path):
+                                ydl_opts['cookiefile'] = temp_cookie_path
+                            
+                            with YoutubeDL(ydl_opts) as ydl: 
+                                info_dict = ydl.extract_info(yt_url, download=True)
+                                downloaded_filename = ydl.prepare_filename(info_dict)
+                            
+                            if temp_cookie_path and os.path.exists(temp_cookie_path):
+                                try: os.remove(temp_cookie_path)
+                                except Exception: pass
+                            
+                            st.session_state.media_path = downloaded_filename
+                            st.session_state.media_label = yt_url
+                            st.session_state.source_type = "Video YouTube"
+                            st.success("Video Berhasil Dimuat!")
+                            st.rerun()
+                            
+                        except Exception as e:
+                            if 'temp_cookie_path' in locals() and temp_cookie_path and os.path.exists(temp_cookie_path):
+                                try: os.remove(temp_cookie_path)
+                                except Exception: pass
+                            st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
+                            st.info("💡 **Solusi Alternatif Terakhir:** Jika pembatasan IP jaringan Anda sangat ketat, Anda dapat mendownload video YouTube tersebut secara manual terlebih dahulu menggunakan situs pengunduh pihak ketiga, kemudian memasukkannya ke tab aplikasi ini lewat menu **'File Lokal'**.")
                                 
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
@@ -614,7 +619,7 @@ with tab3:
     
     st.markdown("#### 🎯 Tujuan Pembuatan Sistem")
     st.write("""
-    Di era pesatnya perkembangan kecerdasan buatan, teknologi rekayasa video (*deepfake*) kini mampu memproduksi manipulasi visual yang sangat halus dan super realistis. Dampaknya, **masyarakat awam sering kali mengalami kesulitan besar untuk membedakan** secara kasat mata mana video yang benar-benar nyata (otentik) dan mana konten palsu hasil fabrikasi kecerdasan buatan. 
+    Di era pesatnya perkembangan kecerdasan buatan, teknologi rekayasa video (*deepfake*) kini mampu memproduksi manipulasi visual yang sangat halus dan super realistis. Dampaknya, **masyarakat awam sering kali mengalami kesulitan besar untuk membedakan** secara kasat mata mana video yang benar-benar nyata (otentik) and mana konten palsu hasil fabrikasi kecerdasan buatan. 
     
     Aletheia Vision dirancang dan hadir sebagai **alat uji praktis (testing tool)** yang ramah pengguna. Aplikasi ini bertujuan membantu menjembatani keterbatasan masyarakat awam, akademisi, hingga praktisi hukum agar dapat memverifikasi keabsahan dokumen video secara objektif, instan, serta transparan berdasarkan parameter data ilmiah, bukan sekadar asumsi visual.
     """)
