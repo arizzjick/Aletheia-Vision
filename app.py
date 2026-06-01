@@ -331,20 +331,17 @@ with tab1:
         if mode == "YouTube":
             yt_url = st.text_input("URL YouTube:", placeholder="https://www.youtube.com/...")
             
-            with st.expander("🔑 PENGATURAN BYPASS PROTEKSI CIPHER YOUTUBE", expanded=True):
+            with st.expander("🔑 PENGATURAN BYPASS PROTEKSI CIPHER YOUTUBE", expanded=False):
                 st.markdown("""
-                Jika *Error 403 Forbidden* terus muncul meski sudah pakai cookie biasa, silakan coba opsi ini:
-                1. Buka YouTube di browser Anda dan **putar video** yang ingin diunduh selama beberapa detik.
-                2. Ekspor file `cookies.txt` menggunakan ekstensi browser saat video tersebut sedang berjalan.
-                3. Unggah file tersebut di bawah ini, lalu klik **Download Video**.
+                Gunakan pengaturan cookie ini jika sewaktu-waktu diblokir kembali oleh YouTube.
                 """)
-                cookie_file = st.file_uploader("Unggah berkas cookies.txt (Opsional/Disarankan):", type=["txt"], key="yt_cookie_final_remedial")
+                cookie_file = st.file_uploader("Unggah berkas cookies.txt (Opsional):", type=["txt"], key="yt_cookie_final_fixed")
             
             c_btn1, c_btn2 = st.columns(2)
             
             if c_btn1.button("🏺 Download Video"):
                 if yt_url:
-                    with st.spinner("⚡ Mengunduh Video Menggunakan Enkripsi Safari iOS (Bypass Mode)..."):
+                    with st.spinner("⚡ Mengunduh Video Menggunakan Alokasi Format Otomatis..."):
                         try:
                             if st.session_state.media_path and os.path.exists(st.session_state.media_path) and "yt_" in st.session_state.media_path:
                                 try: os.remove(st.session_state.media_path)
@@ -359,11 +356,11 @@ with tab1:
                                     f.write(cookie_file.getvalue())
                             
                             # =========================================================================
-                            # PERUBAHAN UTAMA: Mengalihkan agen penyamaran ke Client iOS & Safari
-                            # Ini adalah client paling tangguh menembus proteksi tanda tangan cipher 2026.
+                            # PERUBAHAN KRUSIAL: Memperluas toleransi opsi format video/audio yt-dlp
+                            # Agar tidak memicu error 'Requested format is not available'
                             # =========================================================================
                             ydl_opts = {
-                                'format': 'best', 
+                                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', 
                                 'outtmpl': unique_yt_name,
                                 'noplaylist': True,
                                 'rm_cached_dir': True,
@@ -371,14 +368,11 @@ with tab1:
                                 'quiet': True,
                                 'no_warnings': True,
                                 'keyring_backend': 'dummy',
-                                # Menyamar sebagai Apple iOS Client (iPhone) & Web Client Safari resmi
                                 'extractor_args': {'youtube': {'player_client': ['ios', 'web']}},
                                 'http_headers': {
                                     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
                                     'Accept': '*/*',
                                     'Accept-Language': 'en-US,en;q=0.9',
-                                    'Cache-Control': 'no-cache',
-                                    'Pragma': 'no-cache',
                                 }
                             }
                             
@@ -393,7 +387,15 @@ with tab1:
                                 try: os.remove(temp_cookie_path)
                                 except Exception: pass
                             
-                            st.session_state.media_path = downloaded_filename
+                            # Menangani variasi ekstensi keluaran file hasil download (mkv/mp4)
+                            actual_filename = downloaded_filename
+                            base_no_ext = os.path.splitext(downloaded_filename)[0]
+                            for ext in ['.mp4', '.mkv', '.webm', '.3gp']:
+                                if os.path.exists(base_no_ext + ext):
+                                    actual_filename = base_no_ext + ext
+                                    break
+                            
+                            st.session_state.media_path = actual_filename
                             st.session_state.media_label = yt_url
                             st.session_state.source_type = "Video YouTube"
                             st.success("Video Berhasil Dimuat!")
@@ -404,7 +406,6 @@ with tab1:
                                 try: os.remove(temp_cookie_path)
                                 except Exception: pass
                             st.error(f"Gagal mengunduh video dari YouTube. Error: {e}")
-                            st.info("💡 **Solusi Alternatif Terakhir:** Jika pembatasan IP jaringan Anda sangat ketat, Anda dapat mendownload video YouTube tersebut secara manual terlebih dahulu menggunakan situs pengunduh pihak ketiga, kemudian memasukkannya ke tab aplikasi ini lewat menu **'File Lokal'**.")
                                 
             if c_btn2.button("🧹 Reset"): st.session_state.media_path = None
         else:
@@ -619,7 +620,7 @@ with tab3:
     
     st.markdown("#### 🎯 Tujuan Pembuatan Sistem")
     st.write("""
-    Di era pesatnya perkembangan kecerdasan buatan, teknologi rekayasa video (*deepfake*) kini mampu memproduksi manipulasi visual yang sangat halus dan super realistis. Dampaknya, **masyarakat awam sering kali mengalami kesulitan besar untuk membedakan** secara kasat mata mana video yang benar-benar nyata (otentik) and mana konten palsu hasil fabrikasi kecerdasan buatan. 
+    Di era pesatnya perkembangan kecerdasan buatan, teknologi rekayasa video (*deepfake*) kini mampu memproduksi manipulasi visual yang sangat halus dan super realistis. Dampaknya, **masyarakat awam sering kali mengalami kesulitan besar untuk membedakan** secara kasat mata mana video yang benar-benar nyata (otentik) dan mana konten palsu hasil fabrikasi kecerdasan buatan. 
     
     Aletheia Vision dirancang dan hadir sebagai **alat uji praktis (testing tool)** yang ramah pengguna. Aplikasi ini bertujuan membantu menjembatani keterbatasan masyarakat awam, akademisi, hingga praktisi hukum agar dapat memverifikasi keabsahan dokumen video secara objektif, instan, serta transparan berdasarkan parameter data ilmiah, bukan sekadar asumsi visual.
     """)
