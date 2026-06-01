@@ -5,3 +5,4 @@ yt-dlp
 pandas
 pillow
 numpy
+ffmpeg
