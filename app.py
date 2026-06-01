@@ -337,7 +337,7 @@ with tab1:
                 1. Dapatkan file teks cookie lewat ekstensi browser (contoh: *Get cookies.txt LOCALLY*).
                 2. Unggah file teks tersebut pada kolom di bawah ini sebelum mengunduh.
                 """)
-                cookie_file = st.file_uploader("Unggah berkas cookies.txt Anda:", type=["txt"], key="yt_cookie_no_ffmpeg_fix")
+                cookie_file = st.file_uploader("Unggah berkas cookies.txt Anda:", type=["txt"], key="yt_cookie_video_only_final")
             
             c_btn1, c_btn2 = st.columns(2)
             
@@ -346,7 +346,7 @@ with tab1:
                     if cookie_file is None:
                         st.error("❌ **Gagal:** Anda wajib mengunggah berkas `cookies.txt` terlebih dahulu untuk menghindari pemblokiran bot oleh YouTube.")
                     else:
-                        with st.spinner("⚡ Mengunduh Video Menggunakan Single-File Format (No FFmpeg Mode)..."):
+                        with st.spinner("⚡ Mengunduh Aliran Video Murni (Video Only Mode - No FFmpeg)..."):
                             try:
                                 if st.session_state.media_path and os.path.exists(st.session_state.media_path) and "yt_" in st.session_state.media_path:
                                     try: os.remove(st.session_state.media_path)
@@ -359,11 +359,11 @@ with tab1:
                                     f.write(cookie_file.getvalue())
                                 
                                 # =========================================================================
-                                # PERUBAHAN UTAMA: Memaksa yt-dlp mengunduh file video utuh gabungan (bukan terpisah)
-                                # Ini menghilangkan dependensi / ketergantungan pada FFmpeg secara mutlak.
+                                # KONFIGURASI FIXED: Hanya mengunduh video mp4 murni (tanpa audio)
+                                # Langkah ini memotong kebutuhan FFmpeg secara instan & permanen.
                                 # =========================================================================
                                 ydl_opts = {
-                                    'format': 'b[ext=mp4]/ext=mp4/b', # Mengambil single-file video+audio langsung berformat MP4
+                                    'format': 'bestvideo[ext=mp4]/bestvideo', 
                                     'outtmpl': unique_yt_name,
                                     'noplaylist': True,
                                     'rm_cached_dir': True,
@@ -388,7 +388,7 @@ with tab1:
                                     try: os.remove(temp_cookie_path)
                                     except Exception: pass
                                 
-                                # Menangani konversi ekstensi fisik file jika diperlukan
+                                # Deteksi ekstensi file keluaran yang berhasil diunduh
                                 actual_filename = downloaded_filename
                                 base_no_ext = os.path.splitext(downloaded_filename)[0]
                                 for ext in ['.mp4', '.mkv', '.webm', '.3gp']:
@@ -399,7 +399,7 @@ with tab1:
                                 st.session_state.media_path = actual_filename
                                 st.session_state.media_label = yt_url
                                 st.session_state.source_type = "Video YouTube"
-                                st.success("Video Berhasil Dimuat!")
+                                st.success("Video Berhasil Dimuat (Mode Tanpa Audio)!")
                                 st.rerun()
                                 
                             except Exception as e:
